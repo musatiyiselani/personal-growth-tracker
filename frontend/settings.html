@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Personal Growth Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-page">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">PG</div>
+            <h2>Growth Tracker</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="goals.html">My Goals</a>
+            <a href="activities.html">Activities</a>
+            <a href="reflections.html">Daily Reflections</a>
+            <a href="growth-history.html">Growth History</a>
+            <a href="achievements.html">Achievements</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+        <div class="sidebar-bottom">
+            <a href="profile.html">My Profile</a>
+            <a href="settings.html" class="active">Settings</a>
+            <a href="index.html">Log Out</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="page-header">
+            <div>
+                <h1>Settings</h1>
+                <p>Customise your Personal Growth Tracker experience.</p>
+            </div>
+        </header>
+
+        <section class="content-section">
+            <h2>Application Preferences</h2>
+
+            <form id="settings-form" class="app-form">
+
+                <div class="form-group">
+                    <label for="theme-setting">Appearance</label>
+                    <select id="theme-setting">
+                        <option value="light">Light mode</option>
+                        <option value="dark">Dark mode</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="remember-option">
+                        <input type="checkbox" id="notifications-setting">
+                        Enable notifications
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="week-start">First day of the week</label>
+                    <select id="week-start">
+                        <option value="monday">Monday</option>
+                        <option value="sunday">Sunday</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="primary-button">Save Settings</button>
+                <p id="settings-message" class="form-message"></p>
+            </form>
+        </section>
+
+        <section class="content-section">
+            <h2>Account</h2>
+            <p>Manage your account and sign out of the application.</p>
+            <button type="button" id="logout-button" class="secondary-button">Log Out</button>
+        </section>
+    </main>
+
+    <script src="js/common.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+</html>

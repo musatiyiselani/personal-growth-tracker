@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Growth History | Personal Growth Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="app-page">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-brand">
+            <div class="brand-logo">PG</div>
+            <h2>Growth Tracker</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="goals.html">My Goals</a>
+            <a href="activities.html">Activities</a>
+            <a href="reflections.html">Daily Reflections</a>
+            <a href="growth-history.html" class="active">Growth History</a>
+            <a href="achievements.html">Achievements</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="profile.html">My Profile</a>
+            <a href="settings.html">Settings</a>
+            <a href="index.html">Log Out</a>
+        </div>
+
+    </aside>
+
+    <main class="main-content">
+
+        <header class="page-header">
+            <div>
+                <h1>Growth History</h1>
+                <p>See how far you've come over time.</p>
+            </div>
+        </header>
+
+        <section class="content-section">
+
+            <div class="section-heading">
+                <h2>Progress Over Time</h2>
+
+                <select id="chart-period">
+                    <option value="1day">1 Day</option>
+                    <option value="7days" selected>7 Days</option>
+                    <option value="1month">1 Month</option>
+                    <option value="90days">90 Days</option>
+                    <option value="365days">365 Days</option>
+                    <option value="lifetime">Lifetime</option>
+                </select>
+            </div>
+
+            <div class="chart-container">
+
+                <canvas
+                    id="growth-chart"
+                    aria-label="Graph showing your growth progress over time"
+                ></canvas>
+
+                <p id="chart-empty-message">
+                    Your progress history will appear here as you record
+                    activities and complete goals.
+                </p>
+
+            </div>
+
+        </section>
+
+        <section class="content-section">
+
+            <h2>Progress by Growth Area</h2>
+
+            <div
+                id="growth-history-categories"
+                class="growth-area-grid"
+            ></div>
+
+        </section>
+
+    </main>
+
+    <script src="js/common.js"></script>
+    <script src="js/growth.js"></script>
+
+</body>
+</html>

@@ -4,160 +4,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal Growth Tracker</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
+    <title>Login | Personal Growth Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
 
-    <div class="app-container">
+<body class="auth-page">
 
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo">
-                <h2>Growth<span>.</span></h2>
-                <p>Personal Growth Tracker</p>
+    <main class="auth-container">
+
+        <section class="auth-brand">
+            <div class="brand-logo">PG</div>
+
+            <h1>Personal Growth Tracker</h1>
+
+            <p>
+                Small steps. Consistent progress.
+                A better version of yourself.
+            </p>
+        </section>
+
+        <section class="auth-card">
+
+            <div class="auth-heading">
+                <h2>Welcome back</h2>
+                <p>Log in to continue your growth journey.</p>
             </div>
 
-            <nav>
-                <a href="#" class="active">Dashboard</a>
-                <a href="#">My Goals</a>
-                <a href="#">Daily Progress</a>
-                <a href="#">Achievements</a>
-                <a href="#">Reports</a>
-            </nav>
+            <form id="login-form">
 
-            <div class="sidebar-bottom">
-                <p>Personal Growth Tracker</p>
-                <small>Version 1.0</small>
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="you@example.com"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <div class="auth-options">
+                    <label class="remember-option">
+                        <input type="checkbox" id="remember-me">
+                        Remember me
+                    </label>
+
+                    <a href="forgot-password.html">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <button type="submit" class="primary-button">
+                    Log In
+                </button>
+
+                <p id="login-message" class="form-message"></p>
+
+            </form>
+
+            <div class="auth-footer">
+                <p>
+                    Don't have an account?
+                    <a href="register.html">Create one</a>
+                </p>
             </div>
-        </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
+        </section>
 
-            <header class="topbar">
-                <div>
-                    <h1>Good afternoon, Musa!</h1>
-                    <p>Every small step counts. Keep moving forward.</p>
-                </div>
+        <footer class="auth-bottom">
+            Personal Growth Tracker &copy; 2026
+        </footer>
 
-                <div class="profile">
-                    <div class="profile-avatar">M</div>
-                </div>
-            </header>
+    </main>
 
-            <!-- Overview -->
-            <section class="overview">
-                <div class="section-heading">
-                    <h2>Your Overview</h2>
-                    <p>Here's where your journey stands.</p>
-                </div>
-
-                <div class="stats-grid">
-
-                    <div class="stat-card">
-                        <p>Active Goals</p>
-                        <h3>0</h3>
-                        <small>Goals you're currently pursuing</small>
-                    </div>
-
-                    <div class="stat-card">
-                        <p>Completed Goals</p>
-                        <h3>0</h3>
-                        <small>Achievements so far</small>
-                    </div>
-
-                    <div class="stat-card">
-                        <p>Daily Check-ins</p>
-                        <h3>0</h3>
-                        <small>Days you've recorded progress</small>
-                    </div>
-
-                    <div class="stat-card">
-                        <p>Overall Progress</p>
-                        <h3>0%</h3>
-                        <small>Your growth journey</small>
-                    </div>
-
-                </div>
-            </section>
-
-            <!-- Growth Areas -->
-            <section class="growth-section">
-                <div class="section-heading">
-                    <h2>Areas of Growth</h2>
-                    <p>The different areas you're working to improve.</p>
-                </div>
-
-                <div class="growth-grid">
-
-                    <div class="growth-card">
-                        <div class="growth-icon">🎓</div>
-                        <h3>Education</h3>
-                        <p>Academic performance and learning.</p>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: 0%"></div>
-                        </div>
-                        <small>0% progress</small>
-                    </div>
-
-                    <div class="growth-card">
-                        <div class="growth-icon">💻</div>
-                        <h3>Web Development</h3>
-                        <p>Programming skills and projects.</p>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: 0%"></div>
-                        </div>
-                        <small>0% progress</small>
-                    </div>
-
-                    <div class="growth-card">
-                        <div class="growth-icon">🌱</div>
-                        <h3>Personal Growth</h3>
-                        <p>Habits, discipline and self-improvement.</p>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: 0%"></div>
-                        </div>
-                        <small>0% progress</small>
-                    </div>
-
-                    <div class="growth-card">
-                        <div class="growth-icon">🎯</div>
-                        <h3>Other Goals</h3>
-                        <p>Personal ambitions and other objectives.</p>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: 0%"></div>
-                        </div>
-                        <small>0% progress</small>
-                    </div>
-
-                </div>
-            </section>
-
-            <!-- Daily Reflection -->
-            <section class="reflection-section">
-                <div class="section-heading">
-                    <h2>Daily Reflection</h2>
-                    <p>Take a moment to reflect on your day.</p>
-                </div>
-
-                <div class="reflection-card">
-                    <label for="accomplishments">What did I accomplish today?</label>
-                    <textarea id="accomplishments" placeholder="Write about what you achieved..."></textarea>
-
-                    <label for="learning">What did I learn today?</label>
-                    <textarea id="learning" placeholder="Record something new you learned..."></textarea>
-
-                    <label for="improvement">What can I improve tomorrow?</label>
-                    <textarea id="improvement" placeholder="What would you like to do better?"></textarea>
-
-                    <button id="save-reflection">Save Reflection</button>
-                </div>
-            </section>
-
-        </main>
-    </div>
+    <script src="js/common.js"></script>
+    <script src="js/auth.js"></script>
 
 </body>
 </html>

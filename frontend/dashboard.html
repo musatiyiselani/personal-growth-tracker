@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Personal Growth Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-page">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">PG</div>
+            <h2>Growth Tracker</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="active">Dashboard</a>
+            <a href="goals.html">My Goals</a>
+            <a href="activities.html">Activities</a>
+            <a href="reflections.html">Daily Reflections</a>
+            <a href="growth-history.html">Growth History</a>
+            <a href="achievements.html">Achievements</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <a href="profile.html">My Profile</a>
+            <a href="settings.html">Settings</a>
+            <a href="index.html">Log Out</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="page-header">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Welcome back! Here's an overview of your growth.</p>
+            </div>
+            <a href="profile.html" class="profile-link">My Profile</a>
+        </header>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <h3>Active Goals</h3>
+                <p id="active-goals-count">0</p>
+            </article>
+
+            <article class="stat-card">
+                <h3>Completed Goals</h3>
+                <p id="completed-goals-count">0</p>
+            </article>
+
+            <article class="stat-card">
+                <h3>Activities Logged</h3>
+                <p id="activities-count">0</p>
+            </article>
+
+            <article class="stat-card">
+                <h3>Overall Progress</h3>
+                <p id="overall-progress">0%</p>
+            </article>
+        </section>
+
+        <section class="content-section">
+            <div class="section-heading">
+                <h2>My Growth Areas</h2>
+                <a href="goals.html">View Goals</a>
+            </div>
+
+            <div class="growth-area-grid">
+                <article class="growth-card">
+                    <h3>📚 Education</h3>
+                    <div class="progress-track">
+                        <div class="progress-fill" data-category="Education"></div>
+                    </div>
+                    <p class="growth-percentage" data-category-text="Education">0%</p>
+                </article>
+
+                <article class="growth-card">
+                    <h3>💻 Web Development</h3>
+                    <div class="progress-track">
+                        <div class="progress-fill" data-category="Web Development"></div>
+                    </div>
+                    <p class="growth-percentage" data-category-text="Web Development">0%</p>
+                </article>
+
+                <article class="growth-card">
+                    <h3>🌱 Personal Growth</h3>
+                    <div class="progress-track">
+                        <div class="progress-fill" data-category="Personal Growth"></div>
+                    </div>
+                    <p class="growth-percentage" data-category-text="Personal Growth">0%</p>
+                </article>
+
+                <article class="growth-card">
+                    <h3>🎯 Other</h3>
+                    <div class="progress-track">
+                        <div class="progress-fill" data-category="Other"></div>
+                    </div>
+                    <p class="growth-percentage" data-category-text="Other">0%</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="section-heading">
+                <h2>Recent Goals</h2>
+                <a href="goals.html">See All</a>
+            </div>
+            <div id="dashboard-goals" class="content-list">
+                <p>No goals available yet.</p>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="section-heading">
+                <h2>Recent Activities</h2>
+                <a href="activities.html">See All</a>
+            </div>
+            <div id="dashboard-activities" class="content-list">
+                <p>No activities recorded yet.</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/common.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

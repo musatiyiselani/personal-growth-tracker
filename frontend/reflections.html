@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Reflections | Personal Growth Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-page">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">PG</div>
+            <h2>Growth Tracker</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="goals.html">My Goals</a>
+            <a href="activities.html">Activities</a>
+            <a href="reflections.html" class="active">Daily Reflections</a>
+            <a href="growth-history.html">Growth History</a>
+            <a href="achievements.html">Achievements</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+        <div class="sidebar-bottom">
+            <a href="profile.html">My Profile</a>
+            <a href="settings.html">Settings</a>
+            <a href="index.html">Log Out</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="page-header">
+            <div>
+                <h1>Daily Reflections</h1>
+                <p>Take a moment to think about your day.</p>
+            </div>
+        </header>
+
+        <section class="content-section">
+            <form id="reflection-form" class="app-form">
+
+                <div class="form-group">
+                    <label for="reflection-date">Reflection date</label>
+                    <input type="date" id="reflection-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="accomplishments">What did I accomplish today?</label>
+                    <textarea id="accomplishments" rows="4" placeholder="Write about your achievements..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="learning">What did I learn today?</label>
+                    <textarea id="learning" rows="4" placeholder="Write about something new you learned..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="improvement">What can I improve tomorrow?</label>
+                    <textarea id="improvement" rows="4" placeholder="What would you like to do better?"></textarea>
+                </div>
+
+                <button type="submit" class="primary-button">Save Reflection</button>
+                <p id="reflection-message" class="form-message"></p>
+            </form>
+        </section>
+
+        <section class="content-section">
+            <h2>Previous Reflections</h2>
+            <div id="reflections-container" class="content-list"></div>
+        </section>
+    </main>
+
+    <script src="js/common.js"></script>
+    <script src="js/reflections.js"></script>
+</body>
+</html>

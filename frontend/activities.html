@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activities | Personal Growth Tracker</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-page">
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">PG</div>
+            <h2>Growth Tracker</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="goals.html">My Goals</a>
+            <a href="activities.html" class="active">Activities</a>
+            <a href="reflections.html">Daily Reflections</a>
+            <a href="growth-history.html">Growth History</a>
+            <a href="achievements.html">Achievements</a>
+            <a href="reports.html">Reports</a>
+        </nav>
+        <div class="sidebar-bottom">
+            <a href="profile.html">My Profile</a>
+            <a href="settings.html">Settings</a>
+            <a href="index.html">Log Out</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="page-header">
+            <div>
+                <h1>Activity Tracking</h1>
+                <p>Record the small actions that move you forward.</p>
+            </div>
+        </header>
+
+        <section class="content-section">
+            <h2>Log an Activity</h2>
+
+            <form id="activity-form" class="app-form">
+                <div class="form-group">
+                    <label for="activity-goal">Related goal</label>
+                    <select id="activity-goal" required>
+                        <option value="">Select a goal</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="activity-title">Activity</label>
+                    <input type="text" id="activity-title" required placeholder="What did you work on?">
+                </div>
+
+                <div class="form-group">
+                    <label for="activity-amount">Amount completed</label>
+                    <input type="number" id="activity-amount" min="0.01" step="any" required placeholder="e.g. 2">
+                </div>
+
+                <div class="form-group">
+                    <label for="activity-date">Date</label>
+                    <input type="date" id="activity-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="activity-notes">Notes</label>
+                    <textarea id="activity-notes" placeholder="Additional details (optional)"></textarea>
+                </div>
+
+                <button type="submit" class="primary-button">Save Activity</button>
+                <p id="activity-message" class="form-message"></p>
+            </form>
+        </section>
+
+        <section class="content-section">
+            <h2>Activity History</h2>
+            <div id="activities-container" class="content-list"></div>
+            <p id="no-activities">No activities have been recorded yet.</p>
+        </section>
+    </main>
+
+    <script src="js/common.js"></script>
+    <script src="js/activities.js"></script>
+</body>
+</html>
