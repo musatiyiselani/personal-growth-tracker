@@ -26,7 +26,7 @@
         <div class="sidebar-bottom">
             <a href="profile.html">My Profile</a>
             <a href="settings.html">Settings</a>
-            <a href="index.html">Log Out</a>
+            <a href="index.html" class="logout-button">Log Out</a>
         </div>
     </aside>
 
@@ -47,18 +47,20 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="accomplishments">What did I accomplish today?</label>
-                    <textarea id="accomplishments" rows="4" placeholder="Write about your achievements..."></textarea>
+                    <label for="reflection-mood">How did today feel?</label>
+                    <select id="reflection-mood">
+                        <option value="">Not specified</option>
+                        <option value="Great">Great</option>
+                        <option value="Good">Good</option>
+                        <option value="Okay">Okay</option>
+                        <option value="Low">Low</option>
+                        <option value="Stressed">Stressed</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="learning">What did I learn today?</label>
-                    <textarea id="learning" rows="4" placeholder="Write about something new you learned..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label for="improvement">What can I improve tomorrow?</label>
-                    <textarea id="improvement" rows="4" placeholder="What would you like to do better?"></textarea>
+                    <label for="reflection-content">Reflection</label>
+                    <textarea id="reflection-content" rows="8" placeholder="What did you accomplish today? What did you learn? What would you like to do better tomorrow?" required></textarea>
                 </div>
 
                 <button type="submit" class="primary-button">Save Reflection</button>

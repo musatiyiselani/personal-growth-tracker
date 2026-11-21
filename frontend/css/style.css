@@ -1141,3 +1141,125 @@ body.dark-mode .auth-heading h2 {
         grid-template-columns: 1fr;
     }
 }
+
+/* =====================================================
+   11. ADDITIONS FOR API-CONNECTED PAGES
+===================================================== */
+
+[hidden] {
+    display: none !important;
+}
+
+.form-message.message-success {
+    color: var(--success);
+}
+
+.form-message.message-error {
+    color: var(--danger);
+}
+
+.goal-card-header,
+.activity-card-header,
+.reflection-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.goal-menu {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.goal-menu-toggle {
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.goal-menu-items {
+    position: absolute;
+    right: 0;
+    top: 38px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.goal-menu-items button {
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    text-align: left;
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.goal-menu-items button:hover {
+    background: var(--secondary-light);
+}
+
+.link-button {
+    padding: 4px 6px;
+    background: none;
+    border: none;
+    color: var(--secondary);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.link-button:hover {
+    text-decoration: underline;
+}
+
+.milestone-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.milestone-form input {
+    flex: 1;
+}
+
+.profile-picture-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.growth-area-card {
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+}
+
+.growth-area-card h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.growth-area-card p {
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.growth-area-card .progress-track {
+    margin: 12px 0;
+}

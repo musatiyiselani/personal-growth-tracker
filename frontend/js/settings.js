@@ -1,79 +1,54 @@
-
-/* =====================================================
-   PERSONAL GROWTH TRACKER
-   Application Settings
-===================================================== */
-
 document.addEventListener("DOMContentLoaded", function () {
-
     const form = document.getElementById("settings-form");
-
     const themeSelect = document.getElementById("theme-setting");
     const notificationsCheckbox = document.getElementById("notifications-setting");
     const weekStartSelect = document.getElementById("week-start");
 
-    const settings = PGT.getStoredData("settings", {
-        theme: "light",
-        notifications: false,
-        weekStart: "monday"
+    function fillForm(settings) {
+        themeSelect.value = settings.dark_mode ? "dark" : "light";
+        notificationsCheckbox.checked = Boolean(settings.notifications_enabled);
+        weekStartSelect.value = settings.week_start;
+    }
+
+    // Preview the theme as soon as it is changed; it is saved when the form is submitted.
+    themeSelect.addEventListener("change", function () {
+        PGT.setDarkMode(themeSelect.value === "dark");
     });
 
-
-    // Apply the selected theme.
-
-    function applyTheme(theme) {
-        if (theme === "dark") {
-            document.body.classList.add("dark-mode");
-        } else {
-            document.body.classList.remove("dark-mode");
+    async function loadSettings() {
+        try {
+            const settings = await PGT.api.get("/profile/settings");
+            fillForm(settings);
+            PGT.setDarkMode(settings.dark_mode);
+        } catch (error) {
+            PGT.showPageError(error.message);
         }
     }
 
-
-    // Load saved preferences.
-
-    if (themeSelect) {
-        themeSelect.value = settings.theme;
-    }
-
-    if (notificationsCheckbox) {
-        notificationsCheckbox.checked = settings.notifications;
-    }
-
-    if (weekStartSelect) {
-        weekStartSelect.value = settings.weekStart;
-    }
-
-    applyTheme(settings.theme);
-
-
-    // Apply theme immediately when changed.
-
-    if (themeSelect) {
-        themeSelect.addEventListener("change", function () {
-            applyTheme(themeSelect.value);
-        });
-    }
-
-
-    // Save settings.
-
     if (form) {
-        form.addEventListener("submit", function (event) {
+        form.addEventListener("submit", async function (event) {
             event.preventDefault();
 
-            const updatedSettings = {
-                theme: themeSelect.value,
-                notifications: notificationsCheckbox.checked,
-                weekStart: weekStartSelect.value
+            const submitButton = form.querySelector('button[type="submit"]');
+            const payload = {
+                dark_mode: themeSelect.value === "dark",
+                notifications_enabled: notificationsCheckbox.checked,
+                week_start: weekStartSelect.value
             };
 
-            PGT.saveStoredData("settings", updatedSettings);
-
-            applyTheme(updatedSettings.theme);
-
-            PGT.showMessage("settings-message", "Settings saved successfully!");
+            submitButton.disabled = true;
+            try {
+                const settings = await PGT.api.put("/profile/settings", payload);
+                fillForm(settings);
+                PGT.setDarkMode(settings.dark_mode);
+                PGT.showMessage("settings-message", "Settings saved.", "success");
+            } catch (error) {
+                PGT.showMessage("settings-message", error.message, "error");
+            } finally {
+                submitButton.disabled = false;
+            }
         });
     }
 
+    loadSettings();
 });

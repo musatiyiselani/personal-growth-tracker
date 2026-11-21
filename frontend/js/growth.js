@@ -1,258 +1,154 @@
-
-/* =====================================================
-   PERSONAL GROWTH TRACKER
-   Growth History and Charts
-===================================================== */
-
 document.addEventListener("DOMContentLoaded", function () {
-
-    const canvas = document.getElementById("growth-chart");
     const periodSelect = document.getElementById("chart-period");
+    const canvas = document.getElementById("growth-chart");
     const emptyMessage = document.getElementById("chart-empty-message");
-    const categoryContainer = document.getElementById("growth-history-categories");
+    const categoriesContainer = document.getElementById("growth-history-categories");
+    const context = canvas ? canvas.getContext("2d") : null;
 
-    if (!canvas) return;
+    const CHART_HEIGHT = 320;
+    const CATEGORIES = ["Education", "Web Development", "Personal Growth", "Other"];
 
-    const context = canvas.getContext("2d");
-
-    const periods = {
-        "1day": 1,
-        "7days": 7,
-        "1month": 30,
-        "90days": 90,
-        "365days": 365
-    };
-
-    function getFilteredHistory() {
-        const history = PGT.getStoredData("growthHistory", []);
-
-        const period = periodSelect?.value || "7days";
-
-        const validHistory = history
-            .filter(entry =>
-                entry &&
-                entry.date &&
-                Number.isFinite(Number(entry.progress))
-            )
-            .sort((a, b) => a.date.localeCompare(b.date));
-
+    // Returns the first day of the period as "YYYY-MM-DD". The end date is always today.
+    function startDateFor(period) {
+        const daysBack = {
+            "1day": 0,
+            "7days": 6,
+            "1month": 29,
+            "90days": 89,
+            "365days": 364
+        };
         if (period === "lifetime") {
-            return validHistory;
+            return "2000-01-01";
         }
-
-        const days = periods[period] || 7;
-
-        const cutoff = new Date();
-        cutoff.setHours(0, 0, 0, 0);
-        cutoff.setDate(cutoff.getDate() - days + 1);
-
-        return validHistory.filter(entry => {
-            const entryDate = new Date(entry.date + "T00:00:00");
-            return !isNaN(entryDate) && entryDate >= cutoff;
-        });
+        return PGT.dateOffset(daysBack[period] ?? 6);
     }
 
-    function drawChart() {
-        const history = getFilteredHistory();
-
-        const width = canvas.clientWidth || 600;
-        const height = 280;
+    function resizeCanvas() {
         const ratio = window.devicePixelRatio || 1;
-
+        const width = canvas.clientWidth;
         canvas.width = width * ratio;
-        canvas.height = height * ratio;
-
+        canvas.height = CHART_HEIGHT * ratio;
+        canvas.style.height = `${CHART_HEIGHT}px`;
         context.setTransform(ratio, 0, 0, ratio, 0, 0);
-        context.clearRect(0, 0, width, height);
+    }
 
-        // Show the empty message only when no records exist.
+    function drawChart(history, startDate, endDate) {
+        resizeCanvas();
+        const width = canvas.clientWidth;
+        const padding = { top: 24, right: 20, bottom: 36, left: 44 };
+        const plotWidth = width - padding.left - padding.right;
+        const plotHeight = CHART_HEIGHT - padding.top - padding.bottom;
 
-        if (history.length === 0) {
-            if (emptyMessage) {
-                emptyMessage.style.display = "block";
-            }
+        context.clearRect(0, 0, width, CHART_HEIGHT);
+
+        // Horizontal gridlines and percentage labels
+        context.font = "12px sans-serif";
+        context.fillStyle = "#666";
+        context.strokeStyle = "#d9d9d9";
+        context.lineWidth = 1;
+        for (let level = 0; level <= 100; level += 25) {
+            const y = padding.top + plotHeight - (level / 100) * plotHeight;
+            context.beginPath();
+            context.moveTo(padding.left, y);
+            context.lineTo(padding.left + plotWidth, y);
+            context.stroke();
+            context.textAlign = "right";
+            context.fillText(`${level}%`, padding.left - 8, y + 4);
+        }
+
+        if (!history.length) {
             return;
         }
 
-        if (emptyMessage) {
-            emptyMessage.style.display = "none";
-        }
-
-        const padding = {
-            left: 45,
-            right: 25,
-            top: 25,
-            bottom: 40
-        };
-
-        const graphWidth = width - padding.left - padding.right;
-        const graphHeight = height - padding.top - padding.bottom;
-
-        // Draw horizontal grid lines.
-
-        context.strokeStyle = "#e2e8f0";
-        context.lineWidth = 1;
-        context.font = "11px Arial";
-
-        for (let i = 0; i <= 4; i++) {
-            const y = padding.top + (graphHeight / 4) * i;
-
-            context.beginPath();
-            context.moveTo(padding.left, y);
-            context.lineTo(width - padding.right, y);
-            context.stroke();
-
-            context.fillStyle = "#718096";
-            context.fillText(`${100 - i * 25}%`, 3, y + 4);
-        }
-
-        // Calculate graph points.
-
-        const firstDate = new Date(history[0].date + "T00:00:00");
-        const lastDate = new Date(history[history.length - 1].date + "T00:00:00");
-
-        const dateRange = Math.max(
-            1,
-            (lastDate - firstDate) / (1000 * 60 * 60 * 24)
-        );
+        const first = new Date(`${startDate}T00:00:00`).getTime();
+        const last = new Date(`${endDate}T00:00:00`).getTime();
+        const range = Math.max(last - first, 1);
 
         const points = history.map(entry => {
-            const date = new Date(entry.date + "T00:00:00");
-
-            const datePosition = history.length === 1
-                ? 0.5
-                : (date - firstDate) / (dateRange * 24 * 60 * 60 * 1000);
-
-            const progress = Math.max(
-                0,
-                Math.min(100, Number(entry.progress))
-            );
-
+            const time = new Date(`${entry.date}T00:00:00`).getTime();
             return {
-                x: padding.left + datePosition * graphWidth,
-                y: padding.top + graphHeight - (progress / 100) * graphHeight,
-                date: entry.date,
-                progress
+                x: padding.left + ((time - first) / range) * plotWidth,
+                y: padding.top + plotHeight - (Math.min(100, Math.max(0, entry.progress)) / 100) * plotHeight,
+                label: entry.date,
+                value: entry.progress
             };
         });
 
-        // Draw the progress line.
+        context.strokeStyle = "#1c4e80";
+        context.lineWidth = 2;
+        context.beginPath();
+        points.forEach((point, index) => {
+            if (index === 0) {
+                context.moveTo(point.x, point.y);
+            } else {
+                context.lineTo(point.x, point.y);
+            }
+        });
+        context.stroke();
 
-        if (points.length > 1) {
-            context.beginPath();
-
-            points.forEach((point, index) => {
-                if (index === 0) {
-                    context.moveTo(point.x, point.y);
-                } else {
-                    context.lineTo(point.x, point.y);
-                }
-            });
-
-            context.strokeStyle = "#398bd1";
-            context.lineWidth = 3;
-            context.stroke();
-        }
-
-        // Draw the progress points, including a single record.
-
+        context.fillStyle = "#1c4e80";
         points.forEach(point => {
             context.beginPath();
-            context.arc(point.x, point.y, 5, 0, Math.PI * 2);
-            context.fillStyle = "#245586";
+            context.arc(point.x, point.y, 4, 0, Math.PI * 2);
             context.fill();
-
-            context.fillStyle = "#245586";
-            context.font = "bold 11px Arial";
-            context.textAlign = "center";
-            context.fillText(
-                `${Math.round(point.progress)}%`,
-                point.x,
-                point.y - 12
-            );
         });
 
-        // Display date labels.
-
-        context.fillStyle = "#718096";
-        context.font = "11px Arial";
+        // Date labels at the start and end of the plotted range
+        context.fillStyle = "#666";
         context.textAlign = "left";
-
-        context.fillText(
-            PGT.formatDate(points[0].date),
-            padding.left,
-            height - 8
-        );
-
-        if (points.length > 1) {
-            const lastDateLabel = PGT.formatDate(
-                points[points.length - 1].date
-            );
-
-            context.textAlign = "right";
-
-            context.fillText(
-                lastDateLabel,
-                width - padding.right,
-                height - 8
-            );
-        }
+        context.fillText(PGT.formatDate(points[0].label), padding.left, CHART_HEIGHT - 12);
+        context.textAlign = "right";
+        context.fillText(PGT.formatDate(points[points.length - 1].label), padding.left + plotWidth, CHART_HEIGHT - 12);
     }
 
-    // Display progress by growth area.
-
-    function renderCategories() {
-        if (!categoryContainer) return;
-
-        const goals = PGT.updateGoalStatuses();
-
-        const categories = [
-            "Education",
-            "Web Development",
-            "Personal Growth",
-            "Other"
-        ];
-
-        categoryContainer.innerHTML = categories.map(category => {
-
-            const categoryGoals = goals.filter(
-                goal => goal.category === category
-            );
-
-            const progress = categoryGoals.length
-                ? categoryGoals.reduce((total, goal) => {
-                    return total + PGT.calculateGoalProgress(goal);
-                }, 0) / categoryGoals.length
-                : 0;
+    function renderCategories(goals, growthByCategory) {
+        categoriesContainer.innerHTML = CATEGORIES.map(category => {
+            const categoryGoals = goals.filter(goal => goal.category === category);
+            const progress = Math.min(100, Math.max(0, PGT.averageProgress(categoryGoals)));
+            const activity = growthByCategory.find(item => item.category === category);
+            const units = activity ? PGT.formatNumber(activity.activity_duration) : "0";
 
             return `
-                <article class="growth-card">
+                <article class="growth-area-card">
                     <h3>${category}</h3>
-
-                    <div class="progress-track">
-                        <div
-                            class="progress-fill"
-                            style="width:${progress}%"
-                        ></div>
-                    </div>
-
-                    <p class="growth-percentage">
-                        ${PGT.formatPercentage(progress)}
-                    </p>
+                    <div class="progress-track"><div class="progress-fill" style="width: ${progress}%"></div></div>
+                    <p>${PGT.formatPercentage(progress)} average goal progress</p>
+                    <p>${units} recorded in the selected period</p>
                 </article>
             `;
         }).join("");
     }
 
-    if (periodSelect) {
-        periodSelect.addEventListener("change", drawChart);
+    let lastChart = null; // remembers the last response so resizing can redraw without a request
+
+    async function loadGrowth() {
+        const period = periodSelect.value;
+        const startDate = startDateFor(period);
+        const endDate = PGT.getTodayDate();
+
+        try {
+            const data = await PGT.api.get(`/reports/?start_date=${startDate}&end_date=${endDate}`);
+            const history = data.progress_history || [];
+            lastChart = { history, startDate, endDate };
+
+            emptyMessage.hidden = history.length > 0;
+            drawChart(history, startDate, endDate);
+            renderCategories(data.goals || [], data.growth_by_category || []);
+        } catch (error) {
+            PGT.showPageError(error.message);
+        }
     }
 
-    window.addEventListener("resize", drawChart);
+    if (periodSelect) {
+        periodSelect.addEventListener("change", loadGrowth);
+    }
+    window.addEventListener("resize", () => {
+        if (lastChart) {
+            drawChart(lastChart.history, lastChart.startDate, lastChart.endDate);
+        }
+    });
 
-    PGT.saveProgressSnapshot();
-
-    drawChart();
-    renderCategories();
-
+    if (canvas) {
+        loadGrowth();
+    }
 });

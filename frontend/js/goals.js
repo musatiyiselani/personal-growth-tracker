@@ -1,390 +1,245 @@
-
-/* =====================================================
-   PERSONAL GROWTH TRACKER
-   Goal Management
-===================================================== */
-
 document.addEventListener("DOMContentLoaded", function () {
-
     const form = document.getElementById("goal-form");
     const container = document.getElementById("goals-container");
     const emptyMessage = document.getElementById("no-goals");
+    const submitButton = form ? form.querySelector('button[type="submit"]') : null;
 
+    let goals = [];
     let editingGoalId = null;
 
-    function getGoals() {
-        return PGT.getStoredData("goals", []);
+    function setEditMode(goal) {
+        editingGoalId = goal ? goal.id : null;
+        submitButton.textContent = goal ? "Update Goal" : "Create Goal";
+        if (!goal) {
+            form.reset();
+        }
     }
 
-    // Display goals and milestones.
+    function fillForm(goal) {
+        document.getElementById("goal-title").value = goal.title;
+        document.getElementById("goal-description").value = goal.description || "";
+        document.getElementById("goal-category").value = goal.category;
+        document.getElementById("goal-deadline").value = goal.deadline || "";
+        document.getElementById("goal-target").value = goal.weekly_target;
+        document.getElementById("goal-unit").value = goal.unit;
+        setEditMode(goal);
+        document.getElementById("goal-title").focus();
+    }
+
+    function statusLabel(status) {
+        return status === "Completed" ? "Completed" : status === "In Progress" ? "In progress" : "Not started";
+    }
 
     function renderGoals() {
-        const goals = PGT.updateGoalStatuses();
-
-        if (!container) return;
-
-        if (emptyMessage) {
-            emptyMessage.style.display = goals.length ? "none" : "block";
+        if (!goals.length) {
+            emptyMessage.hidden = false;
+            container.innerHTML = "";
+            return;
         }
+        emptyMessage.hidden = true;
 
         container.innerHTML = goals.map(goal => {
-            const progress = PGT.calculateGoalProgress(goal);
-            const milestones = goal.milestones || [];
+            const progress = Math.min(100, Math.max(0, Number(goal.progress) || 0));
+            const milestones = (goal.milestones || []).map(milestone => `
+                <li class="milestone-item">
+                    <label>
+                        <input type="checkbox" class="milestone-checkbox"
+                            data-goal-id="${goal.id}" data-milestone-id="${milestone.id}"
+                            ${milestone.completed ? "checked" : ""}>
+                        ${PGT.escapeHTML(milestone.title)}
+                    </label>
+                    <button type="button" class="delete-milestone link-button"
+                        data-goal-id="${goal.id}" data-milestone-id="${milestone.id}">Remove</button>
+                </li>
+            `).join("");
 
             return `
-                <article class="goal-card">
-
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-
-                        <h3>${PGT.escapeHTML(goal.title)}</h3>
-
-                        <div style="position:relative;">
-
-                            <button
-                                type="button"
-                                class="goal-menu-toggle"
-                                aria-label="Goal options"
-                                aria-expanded="false"
-                                style="border:none; background:transparent; font-size:24px; cursor:pointer; padding:4px 10px;"
-                            >⋮</button>
-
-                            <div
-                                class="goal-menu"
-                                hidden
-                                style="position:absolute; right:0; top:100%; z-index:10; background:var(--card-bg, white); border:1px solid var(--border-color, #ddd); border-radius:8px; padding:6px; min-width:110px; box-shadow:0 4px 12px rgba(0,0,0,0.12);"
-                            >
-                                <button
-                                    type="button"
-                                    class="delete-goal"
-                                    data-id="${goal.id}"
-                                    style="width:100%; border:none; background:transparent; color:#dc3545; padding:9px; text-align:left; cursor:pointer;"
-                                >Delete</button>
-                            </div>
-
+                <article class="goal-card" data-goal-card="${goal.id}">
+                    <div class="goal-card-header">
+                        <div>
+                            <h3>${PGT.escapeHTML(goal.title)}</h3>
+                            <p>${PGT.escapeHTML(goal.category)} &middot; ${statusLabel(goal.status)}</p>
                         </div>
-
-                    </div>
-
-                    <p>${PGT.escapeHTML(goal.description || "")}</p>
-                    <p>Category: ${PGT.escapeHTML(goal.category)}</p>
-                    <p>Deadline: ${PGT.formatDate(goal.deadline)}</p>
-                    <p>Weekly target: ${PGT.escapeHTML(goal.target)} ${PGT.escapeHTML(goal.unit)}</p>
-                    <p>Status: ${PGT.escapeHTML(goal.status || "active")}</p>
-
-                    <p>Progress: ${progress}%</p>
-
-                    <div class="progress-track">
-                        <div class="progress-fill" style="width:${progress}%"></div>
-                    </div>
-
-                    <div class="milestone-list">
-                        <h4>Milestones</h4>
-
-                        ${milestones.map(milestone => `
-                            <div class="milestone-item">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        class="milestone-checkbox"
-                                        data-goal-id="${goal.id}"
-                                        data-milestone-id="${milestone.id}"
-                                        ${milestone.completed ? "checked" : ""}
-                                    >
-                                    ${PGT.escapeHTML(milestone.title)}
-                                </label>
-
-                                <button
-                                    type="button"
-                                    class="delete-button delete-milestone"
-                                    data-goal-id="${goal.id}"
-                                    data-milestone-id="${milestone.id}"
-                                >Remove</button>
+                        <div class="goal-menu">
+                            <button type="button" class="goal-menu-toggle" data-goal-id="${goal.id}" aria-label="Goal options">&#8943;</button>
+                            <div class="goal-menu-items" hidden>
+                                <button type="button" class="edit-goal" data-goal-id="${goal.id}">Edit</button>
+                                <button type="button" class="delete-goal" data-goal-id="${goal.id}">Delete</button>
                             </div>
-                        `).join("")}
+                        </div>
                     </div>
 
-                    <div class="milestone-form">
-                        <input
-                            type="text"
-                            class="new-milestone"
-                            data-goal-id="${goal.id}"
-                            placeholder="Add a milestone"
-                        >
+                    ${goal.description ? `<p>${PGT.escapeHTML(goal.description)}</p>` : ""}
 
-                        <button
-                            type="button"
-                            class="secondary-button add-milestone"
-                            data-goal-id="${goal.id}"
-                        >Add Milestone</button>
-                    </div>
+                    <p>Weekly target: ${PGT.formatNumber(goal.weekly_target)} ${PGT.escapeHTML(goal.unit)}</p>
+                    <p>Deadline: ${goal.deadline ? PGT.formatDate(goal.deadline) : "No deadline"}</p>
 
-                    <div class="goal-actions">
-                        <button
-                            type="button"
-                            class="edit-button edit-goal"
-                            data-id="${goal.id}"
-                        >Edit</button>
-                    </div>
+                    <div class="progress-track"><div class="progress-fill" style="width: ${progress}%"></div></div>
+                    <p>${PGT.formatPercentage(progress)} complete</p>
 
+                    <h4>Milestones</h4>
+                    <ul class="milestone-list">${milestones || "<li>No milestones yet.</li>"}</ul>
+                    <form class="milestone-form" data-goal-id="${goal.id}">
+                        <input type="text" class="milestone-title" placeholder="Add a milestone" maxlength="200" required>
+                        <button type="submit" class="secondary-button">Add</button>
+                    </form>
                 </article>
             `;
         }).join("");
     }
 
-    // Create or update a goal.
+    async function loadGoals() {
+        try {
+            goals = await PGT.api.get("/goals/");
+            renderGoals();
+        } catch (error) {
+            PGT.showPageError(error.message);
+        }
+    }
+
+    // ----- Create and update goals ---------------------------------------------
 
     if (form) {
-        form.addEventListener("submit", function (event) {
+        form.addEventListener("submit", async function (event) {
             event.preventDefault();
 
-            const goals = getGoals();
+            const title = document.getElementById("goal-title").value.trim();
+            const description = document.getElementById("goal-description").value.trim();
+            const category = document.getElementById("goal-category").value;
+            const deadline = document.getElementById("goal-deadline").value;
+            const target = Number(document.getElementById("goal-target").value);
+            const unit = document.getElementById("goal-unit").value;
 
-            const goalData = {
-                title: document.getElementById("goal-title").value.trim(),
-                description: document.getElementById("goal-description").value.trim(),
-                category: document.getElementById("goal-category").value,
-                deadline: document.getElementById("goal-deadline").value,
-                target: Number(document.getElementById("goal-target").value),
-                unit: document.getElementById("goal-unit").value
+            if (!title || !category || !deadline || !(target > 0)) {
+                PGT.showMessage("goal-message", "Please complete every field with a valid target.", "error");
+                return;
+            }
+
+            const payload = {
+                title,
+                description: description || null,
+                category,
+                weekly_target: target,
+                unit,
+                deadline
             };
 
-            if (
-                !goalData.title ||
-                !goalData.category ||
-                !goalData.deadline ||
-                goalData.target <= 0
-            ) {
-                PGT.showMessage(
-                    "goal-message",
-                    "Please complete all required fields.",
-                    "error"
-                );
-                return;
-            }
-
-            if (editingGoalId) {
-                const index = goals.findIndex(
-                    goal => String(goal.id) === String(editingGoalId)
-                );
-
-                if (index !== -1) {
-                    goals[index] = {
-                        ...goals[index],
-                        ...goalData
-                    };
+            submitButton.disabled = true;
+            try {
+                if (editingGoalId) {
+                    await PGT.api.put(`/goals/${editingGoalId}`, payload);
+                    PGT.showMessage("goal-message", "Goal updated.", "success");
+                } else {
+                    // The start date is set to today; the form does not ask for it.
+                    await PGT.api.post("/goals/", { ...payload, start_date: PGT.getTodayDate() });
+                    PGT.showMessage("goal-message", "Goal created.", "success");
                 }
-
-                editingGoalId = null;
-
-            } else {
-                goals.push({
-                    id: PGT.generateId(),
-                    ...goalData,
-                    milestones: [],
-                    status: "active",
-                    createdAt: PGT.getTodayDate()
-                });
+                setEditMode(null);
+                await loadGoals();
+            } catch (error) {
+                PGT.showMessage("goal-message", error.message, "error");
+            } finally {
+                submitButton.disabled = false;
             }
-
-            PGT.saveStoredData("goals", goals);
-            PGT.updateGoalStatuses();
-
-            form.reset();
-
-            form.querySelector('button[type="submit"]').textContent = "Create Goal";
-
-            PGT.showMessage("goal-message", "Goal saved successfully!");
-
-            renderGoals();
         });
     }
 
-    // Handle goal and milestone buttons.
+    // ----- Goal and milestone actions (event delegation) ------------------------
 
     if (container) {
-        container.addEventListener("click", function (event) {
-
-            const button = event.target.closest("button");
-
-            if (!button || !container.contains(button)) return;
-
-            // Open or close the goal three-dot menu.
-
-            if (button.classList.contains("goal-menu-toggle")) {
-
-                const menu = button.nextElementSibling;
-                const isOpening = menu.hidden;
-
-                container.querySelectorAll(".goal-menu").forEach(item => {
-                    item.hidden = true;
-                });
-
-                container.querySelectorAll(".goal-menu-toggle").forEach(item => {
-                    item.setAttribute("aria-expanded", "false");
-                });
-
-                if (isOpening) {
-                    menu.hidden = false;
-                    button.setAttribute("aria-expanded", "true");
-                }
-
+        container.addEventListener("click", async function (event) {
+            const menuToggle = event.target.closest(".goal-menu-toggle");
+            if (menuToggle) {
+                const menu = menuToggle.nextElementSibling;
+                const wasHidden = menu.hidden;
+                document.querySelectorAll(".goal-menu-items").forEach(item => { item.hidden = true; });
+                menu.hidden = !wasHidden;
                 return;
             }
 
-            // Delete a goal.
+            const editButton = event.target.closest(".edit-goal");
+            if (editButton) {
+                document.querySelectorAll(".goal-menu-items").forEach(item => { item.hidden = true; });
+                const goal = goals.find(item => String(item.id) === editButton.dataset.goalId);
+                if (goal) {
+                    fillForm(goal);
+                }
+                return;
+            }
 
-            if (button.classList.contains("delete-goal")) {
-
-                const goalId = button.dataset.id;
-
-                if (!confirm("Are you sure you want to delete this goal?")) {
+            const deleteGoalButton = event.target.closest(".delete-goal");
+            if (deleteGoalButton) {
+                if (!window.confirm("Delete this goal and its milestones?")) {
                     return;
                 }
-
-                const goals = getGoals().filter(
-                    goal => String(goal.id) !== String(goalId)
-                );
-
-                PGT.saveStoredData("goals", goals);
-                PGT.updateGoalStatuses();
-                renderGoals();
-
-                return;
-            }
-
-            // Edit a goal.
-
-            if (button.classList.contains("edit-goal")) {
-
-                const goalId = button.dataset.id;
-
-                const goal = getGoals().find(
-                    item => String(item.id) === String(goalId)
-                );
-
-                if (!goal || !form) return;
-
-                document.getElementById("goal-title").value = goal.title;
-                document.getElementById("goal-description").value = goal.description || "";
-                document.getElementById("goal-category").value = goal.category;
-                document.getElementById("goal-deadline").value = goal.deadline;
-                document.getElementById("goal-target").value = goal.target;
-                document.getElementById("goal-unit").value = goal.unit;
-
-                editingGoalId = goal.id;
-
-                form.querySelector('button[type="submit"]').textContent = "Update Goal";
-
-                form.scrollIntoView({
-                    behavior: "smooth"
-                });
-
-                return;
-            }
-
-            // Add a milestone.
-
-            if (button.classList.contains("add-milestone")) {
-
-                const goalId = button.dataset.goalId;
-
-                const input = container.querySelector(
-                    `.new-milestone[data-goal-id="${goalId}"]`
-                );
-
-                if (!input) return;
-
-                const title = input.value.trim();
-
-                if (!title) {
-                    alert("Enter a milestone name first.");
-                    return;
+                try {
+                    await PGT.api.delete(`/goals/${deleteGoalButton.dataset.goalId}`);
+                    if (String(editingGoalId) === deleteGoalButton.dataset.goalId) {
+                        setEditMode(null);
+                    }
+                    await loadGoals();
+                } catch (error) {
+                    PGT.showPageError(error.message);
                 }
-
-                const goals = getGoals();
-
-                const goal = goals.find(
-                    item => String(item.id) === String(goalId)
-                );
-
-                if (!goal) return;
-
-                if (!goal.milestones) {
-                    goal.milestones = [];
-                }
-
-                goal.milestones.push({
-                    id: PGT.generateId(),
-                    title: title,
-                    completed: false
-                });
-
-                PGT.saveStoredData("goals", goals);
-                renderGoals();
-
                 return;
             }
 
-            // Delete a milestone using the original Remove button.
-
-            if (button.classList.contains("delete-milestone")) {
-
-                const goalId = button.dataset.goalId;
-                const milestoneId = button.dataset.milestoneId;
-
-                const goals = getGoals();
-
-                const goal = goals.find(
-                    item => String(item.id) === String(goalId)
-                );
-
-                if (!goal) return;
-
-                goal.milestones = (goal.milestones || []).filter(
-                    milestone => String(milestone.id) !== String(milestoneId)
-                );
-
-                PGT.saveStoredData("goals", goals);
-                PGT.updateGoalStatuses();
-                renderGoals();
-
-                return;
+            const deleteMilestoneButton = event.target.closest(".delete-milestone");
+            if (deleteMilestoneButton) {
+                try {
+                    await PGT.api.delete(
+                        `/goals/${deleteMilestoneButton.dataset.goalId}/milestones/${deleteMilestoneButton.dataset.milestoneId}`
+                    );
+                    await loadGoals();
+                } catch (error) {
+                    PGT.showPageError(error.message);
+                }
             }
         });
 
-        // Mark milestones as completed or incomplete.
-
-        container.addEventListener("change", function (event) {
-
-            if (!event.target.classList.contains("milestone-checkbox")) {
+        container.addEventListener("change", async function (event) {
+            const checkbox = event.target.closest(".milestone-checkbox");
+            if (!checkbox) {
                 return;
             }
-
-            const goalId = event.target.dataset.goalId;
-            const milestoneId = event.target.dataset.milestoneId;
-
-            const goals = getGoals();
-
-            const goal = goals.find(
-                item => String(item.id) === String(goalId)
-            );
-
-            if (!goal) return;
-
-            const milestone = (goal.milestones || []).find(
-                item => String(item.id) === String(milestoneId)
-            );
-
-            if (milestone) {
-                milestone.completed = event.target.checked;
+            try {
+                await PGT.api.put(
+                    `/goals/${checkbox.dataset.goalId}/milestones/${checkbox.dataset.milestoneId}`,
+                    { completed: checkbox.checked }
+                );
+                await loadGoals();
+            } catch (error) {
+                checkbox.checked = !checkbox.checked;
+                PGT.showPageError(error.message);
             }
+        });
 
-            PGT.saveStoredData("goals", goals);
-            PGT.updateGoalStatuses();
-            renderGoals();
+        container.addEventListener("submit", async function (event) {
+            const milestoneForm = event.target.closest(".milestone-form");
+            if (!milestoneForm) {
+                return;
+            }
+            event.preventDefault();
+            const input = milestoneForm.querySelector(".milestone-title");
+            const title = input.value.trim();
+            if (!title) {
+                return;
+            }
+            try {
+                await PGT.api.post(`/goals/${milestoneForm.dataset.goalId}/milestones`, { title });
+                await loadGoals();
+            } catch (error) {
+                PGT.showPageError(error.message);
+            }
         });
     }
 
-    renderGoals();
+    // Close open goal menus when the user clicks anywhere else.
+    document.addEventListener("click", function (event) {
+        if (!event.target.closest(".goal-menu")) {
+            document.querySelectorAll(".goal-menu-items").forEach(item => { item.hidden = true; });
+        }
+    });
 
+    loadGoals();
 });

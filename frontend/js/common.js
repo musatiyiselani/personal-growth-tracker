@@ -1,258 +1,285 @@
+/*
+ * Personal Growth Tracker - shared helpers and API client.
+ * Every page loads this file before its own script.
+ */
 
-/* =====================================================
-   PERSONAL GROWTH TRACKER
-   Common JavaScript Functions
-===================================================== */
+(function () {
+    const API_BASE = window.PGT_API_BASE || "http://127.0.0.1:8000";
+    const TOKEN_KEY = "pgt_token";
+    const USER_KEY = "pgt_user";
+    const DARK_MODE_KEY = "pgt_dark_mode";
+    const PUBLIC_PAGES = ["index.html", "register.html", "forgot-password.html"];
 
-function getStoredData(key, defaultValue = []) {
-    try {
-        const data = localStorage.getItem(key);
-        return data === null ? defaultValue : JSON.parse(data);
-    } catch (error) {
-        console.error("Storage error:", error);
-        return defaultValue;
+    // ----- Page and session helpers -------------------------------------------
+
+    function currentPage() {
+        return window.location.pathname.split("/").pop() || "index.html";
     }
-}
 
-function saveStoredData(key, data) {
-    try {
-        localStorage.setItem(key, JSON.stringify(data));
+    function isPublicPage() {
+        return PUBLIC_PAGES.includes(currentPage());
+    }
+
+    function getToken() {
+        return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+    }
+
+    function getCurrentUser() {
+        const raw = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
+        try {
+            return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function clearSession() {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        sessionStorage.removeItem(TOKEN_KEY);
+        sessionStorage.removeItem(USER_KEY);
+    }
+
+    // "Remember me" keeps the session across browser restarts (localStorage).
+    // Otherwise the session lasts only for this browser tab (sessionStorage).
+    function saveSession(token, user, remember) {
+        clearSession();
+        const store = remember ? localStorage : sessionStorage;
+        store.setItem(TOKEN_KEY, token);
+        store.setItem(USER_KEY, JSON.stringify(user));
+    }
+
+    function setCurrentUser(user) {
+        const store = localStorage.getItem(TOKEN_KEY) ? localStorage : sessionStorage;
+        store.setItem(USER_KEY, JSON.stringify(user));
+    }
+
+    function logout(event) {
+        if (event) {
+            event.preventDefault();
+        }
+        clearSession();
+        window.location.href = "index.html";
+    }
+
+    // Pages other than the public ones require a session token.
+    function requireLogin() {
+        if (!isPublicPage() && !getToken()) {
+            window.location.replace("index.html");
+            return false;
+        }
         return true;
-    } catch (error) {
-        console.error("Storage error:", error);
-        return false;
-    }
-}
-
-function generateId() {
-    if (window.crypto?.randomUUID) {
-        return window.crypto.randomUUID();
     }
 
-    return Date.now().toString(36) +
-        Math.random().toString(36).substring(2);
-}
+    // ----- Theme ----------------------------------------------------------------
 
-function getTodayDate() {
-    const today = new Date();
-
-    return [
-        today.getFullYear(),
-        String(today.getMonth() + 1).padStart(2, "0"),
-        String(today.getDate()).padStart(2, "0")
-    ].join("-");
-}
-
-function formatDate(dateString) {
-    if (!dateString) return "No date available";
-
-    const date = new Date(`${dateString}T00:00:00`);
-
-    if (Number.isNaN(date.getTime())) {
-        return "Invalid date";
+    function setDarkMode(enabled) {
+        localStorage.setItem(DARK_MODE_KEY, enabled ? "true" : "false");
+        document.body.classList.toggle("dark-mode", Boolean(enabled));
     }
 
-    return date.toLocaleDateString("en-ZA", {
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-    });
-}
+    function applySavedTheme() {
+        document.body.classList.toggle("dark-mode", localStorage.getItem(DARK_MODE_KEY) === "true");
+    }
 
-function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, character => {
-        const characters = {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-        };
+    // ----- API client -----------------------------------------------------------
 
-        return characters[character];
-    });
-}
+    function formatErrorDetail(detail, fallback) {
+        if (typeof detail === "string") {
+            return detail;
+        }
+        if (Array.isArray(detail)) {
+            return detail
+                .map(item => (item && item.msg ? item.msg.replace(/^Value error, /, "") : ""))
+                .filter(Boolean)
+                .join(" ") || fallback;
+        }
+        return fallback;
+    }
 
-function showMessage(elementId, message, type = "success") {
-    const element = document.getElementById(elementId);
+    async function request(path, options = {}) {
+        const { method = "GET", body, form, blob = false, auth = true } = options;
+        const headers = {};
+        let payload;
 
-    if (!element) return;
+        if (form) {
+            payload = form; // FormData or URLSearchParams: the browser sets Content-Type
+        } else if (body !== undefined) {
+            headers["Content-Type"] = "application/json";
+            payload = JSON.stringify(body);
+        }
 
-    element.textContent = message;
+        if (auth) {
+            const token = getToken();
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+        }
 
-    element.classList.remove(
-        "message-success",
-        "message-error",
-        "message-warning"
-    );
+        let response;
+        try {
+            response = await fetch(API_BASE + path, { method, headers, body: payload });
+        } catch (error) {
+            throw new Error("Cannot reach the server. Check that the backend is running.");
+        }
 
-    element.classList.add(`message-${type}`);
-}
+        if (response.status === 401 && auth) {
+            clearSession();
+            if (!isPublicPage()) {
+                window.location.replace("index.html");
+            }
+            throw new Error("Your session has ended. Please log in again.");
+        }
 
-function formatPercentage(value) {
-    const percentage = Number(value) || 0;
+        if (!response.ok) {
+            let message = "Something went wrong. Please try again.";
+            try {
+                const data = await response.json();
+                message = formatErrorDetail(data.detail, message);
+            } catch (error) {
+                // The response was not JSON; keep the generic message.
+            }
+            throw new Error(message);
+        }
 
-    return `${Math.round(
-        Math.min(100, Math.max(0, percentage))
-    )}%`;
-}
+        if (blob) {
+            return response.blob();
+        }
+        if (response.status === 204) {
+            return null;
+        }
+        return response.json();
+    }
 
-function getCurrentUser() {
-    return getStoredData("currentUser", null);
-}
-
-function logout() {
-    localStorage.removeItem("currentUser");
-    window.location.href = "index.html";
-}
-
-function getWeeklyActivityAmount(goalId) {
-    const activities = getStoredData("activities", []);
-
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-    sevenDaysAgo.setDate(today.getDate() - 6);
-
-    return activities
-        .filter(activity => {
-            if (activity.goalId !== goalId) return false;
-
-            const activityDate = new Date(
-                `${activity.date}T00:00:00`
-            );
-
-            return activityDate >= sevenDaysAgo &&
-                activityDate <= today;
-        })
-        .reduce((total, activity) => {
-            return total + Number(activity.amount || 0);
-        }, 0);
-}
-
-function calculateGoalProgress(goal) {
-    const weeklyAmount = getWeeklyActivityAmount(goal.id);
-    const target = Number(goal.target) || 0;
-
-    const activityProgress = target > 0
-        ? Math.min(100, (weeklyAmount / target) * 100)
-        : 0;
-
-    const milestones = goal.milestones || [];
-
-    const completedMilestones = milestones.filter(
-        milestone => milestone.completed
-    ).length;
-
-    const milestoneProgress = milestones.length > 0
-        ? (completedMilestones / milestones.length) * 100
-        : null;
-
-    const progress = milestoneProgress === null
-        ? activityProgress
-        : (activityProgress + milestoneProgress) / 2;
-
-    return Math.round(Math.min(100, progress));
-}
-
-function saveProgressSnapshot() {
-    const goals = getStoredData("goals", []);
-
-    const progress = goals.length > 0
-        ? goals.reduce((total, goal) => {
-            return total + calculateGoalProgress(goal);
-        }, 0) / goals.length
-        : 0;
-
-    const history = getStoredData("growthHistory", []);
-    const today = getTodayDate();
-
-    const existingIndex = history.findIndex(
-        entry => entry.date === today
-    );
-
-    const snapshot = {
-        date: today,
-        progress: Math.round(progress)
+    const api = {
+        get: (path, options) => request(path, options),
+        post: (path, body, options = {}) => request(path, { ...options, method: "POST", body }),
+        postForm: (path, form, options = {}) => request(path, { ...options, method: "POST", form }),
+        put: (path, body, options = {}) => request(path, { ...options, method: "PUT", body }),
+        delete: (path, options = {}) => request(path, { ...options, method: "DELETE" })
     };
 
-    if (existingIndex >= 0) {
-        history[existingIndex] = snapshot;
-    } else {
-        history.push(snapshot);
+    // ----- Display helpers ------------------------------------------------------
+
+    function escapeHTML(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     }
 
-    saveStoredData("growthHistory", history);
-}
+    // Accepts "YYYY-MM-DD" or a longer ISO timestamp; only the date part is used.
+    function formatDate(value) {
+        if (!value) {
+            return "No date available";
+        }
+        const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+        if (Number.isNaN(date.getTime())) {
+            return "Invalid date";
+        }
+        return date.toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
+    }
 
-function updateGoalStatuses() {
-    const goals = getStoredData("goals", []);
+    function formatNumber(value) {
+        const number = Number(value);
+        if (Number.isNaN(number)) {
+            return "0";
+        }
+        return String(Math.round(number * 100) / 100);
+    }
 
-    goals.forEach(goal => {
-        goal.progress = calculateGoalProgress(goal);
+    function formatPercentage(value) {
+        return `${Math.round(Number(value) || 0)}%`;
+    }
 
-        if (goal.progress >= 100) {
-            goal.status = "completed";
-        } else {
-            goal.status = "active";
+    function toIsoDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    // Returns "YYYY-MM-DD" for the local date `daysAgo` days before today.
+    function dateOffset(daysAgo) {
+        const date = new Date();
+        date.setDate(date.getDate() - daysAgo);
+        return toIsoDate(date);
+    }
+
+    function getTodayDate() {
+        return toIsoDate(new Date());
+    }
+
+    function averageProgress(goals) {
+        if (!goals.length) {
+            return 0;
+        }
+        return goals.reduce((total, goal) => total + (Number(goal.progress) || 0), 0) / goals.length;
+    }
+
+    function showMessage(elementId, message, type = "success") {
+        const element = document.getElementById(elementId);
+        if (!element) {
+            return;
+        }
+        element.textContent = message;
+        element.classList.remove("message-success", "message-error");
+        element.classList.add(`message-${type}`);
+    }
+
+    // Shows an error at the top of the page content (used when a page fails to load).
+    function showPageError(message) {
+        const container = document.querySelector(".main-content") || document.body;
+        let banner = document.getElementById("page-error");
+        if (!banner) {
+            banner = document.createElement("p");
+            banner.id = "page-error";
+            banner.className = "form-message message-error";
+            container.insertBefore(banner, container.firstChild);
+        }
+        banner.textContent = message;
+    }
+
+    // ----- Startup --------------------------------------------------------------
+
+    applySavedTheme();
+    const authorised = requireLogin();
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("#logout-button, .logout-button").forEach(button => {
+            button.addEventListener("click", logout);
+        });
+
+        if (authorised && !isPublicPage()) {
+            // Keep the theme in step with the saved server setting. A failure here
+            // should not stop the page from working.
+            api.get("/profile/settings")
+                .then(settings => setDarkMode(settings.dark_mode))
+                .catch(() => {});
         }
     });
 
-    saveStoredData("goals", goals);
-    saveProgressSnapshot();
-
-    return goals;
-}
-
-
-// APPLY SAVED THEME ON EVERY PAGE.
-
-function applySavedTheme() {
-    const settings = getStoredData("settings", {
-        theme: "light"
-    });
-
-    if (settings.theme === "dark") {
-        document.body.classList.add("dark-mode");
-    } else {
-        document.body.classList.remove("dark-mode");
-    }
-}
-
-
-// SHARED PAGE FUNCTIONS.
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    applySavedTheme();
-
-    document.querySelectorAll(
-        "#logout-button, .logout-button"
-    ).forEach(button => {
-        button.addEventListener("click", logout);
-    });
-
-});
-
-
-// SHARED APPLICATION OBJECT.
-
-window.PGT = {
-    getStoredData,
-    saveStoredData,
-    generateId,
-    getTodayDate,
-    formatDate,
-    escapeHTML,
-    showMessage,
-    formatPercentage,
-    getCurrentUser,
-    logout,
-    getWeeklyActivityAmount,
-    calculateGoalProgress,
-    saveProgressSnapshot,
-    updateGoalStatuses,
-    applySavedTheme
-};
+    window.PGT = {
+        API_BASE,
+        api,
+        getToken,
+        getCurrentUser,
+        setCurrentUser,
+        saveSession,
+        clearSession,
+        logout,
+        requireLogin,
+        setDarkMode,
+        escapeHTML,
+        formatDate,
+        formatNumber,
+        formatPercentage,
+        dateOffset,
+        getTodayDate,
+        averageProgress,
+        showMessage,
+        showPageError
+    };
+})();

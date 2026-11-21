@@ -1,122 +1,104 @@
-
-/* =====================================================
-   PERSONAL GROWTH TRACKER
-   Reports
-===================================================== */
-
 document.addEventListener("DOMContentLoaded", function () {
-
+    const periodSelect = document.getElementById("report-period");
     const generateButton = document.getElementById("generate-report");
+    const downloadButton = document.getElementById("download-report-pdf");
+    const activitiesCount = document.getElementById("report-activities-count");
+    const completedGoals = document.getElementById("report-completed-goals");
+    const averageProgress = document.getElementById("report-average-progress");
+    const summaryContainer = document.getElementById("report-summary");
+    const breakdownContainer = document.getElementById("report-growth-breakdown");
 
-    function generateReport() {
+    const CATEGORIES = ["Education", "Web Development", "Personal Growth", "Other"];
+    const PERIOD_LABELS = {
+        week: "Last 7 days",
+        month: "Last 30 days",
+        year: "Last 12 months",
+        all: "All time"
+    };
+    const DAYS_BACK = { week: 6, month: 29, year: 364 };
 
-        const period = document.getElementById("report-period").value;
-
-        const activities = PGT.getStoredData("activities", []);
-        const goals = PGT.updateGoalStatuses();
-
-        const today = new Date();
-        today.setHours(23, 59, 59, 999);
-
-        const days = {
-            week: 7,
-            month: 30,
-            year: 365
+    function currentRange() {
+        const period = periodSelect.value;
+        return {
+            period,
+            startDate: period === "all" ? "2000-01-01" : PGT.dateOffset(DAYS_BACK[period] ?? 6),
+            endDate: PGT.getTodayDate()
         };
+    }
 
-        let filteredActivities = activities;
-
-        if (period !== "all") {
-            const cutoff = new Date();
-            cutoff.setHours(0, 0, 0, 0);
-            cutoff.setDate(cutoff.getDate() - days[period] + 1);
-
-            filteredActivities = activities.filter(activity => {
-                const date = new Date(`${activity.date}T00:00:00`);
-
-                return date >= cutoff && date <= today;
-            });
-        }
-
-        const completedGoals = goals.filter(
-            goal => goal.status === "completed"
-        );
-
-        const averageProgress = goals.length
-            ? goals.reduce((total, goal) => {
-                return total + PGT.calculateGoalProgress(goal);
-            }, 0) / goals.length
-            : 0;
-
-
-        // Update report statistics.
-
-        document.getElementById("report-activities-count").textContent =
-            filteredActivities.length;
-
-        document.getElementById("report-completed-goals").textContent =
-            completedGoals.length;
-
-        document.getElementById("report-average-progress").textContent =
-            PGT.formatPercentage(averageProgress);
-
-
-        // Generate summary.
-
-        const summary = document.getElementById("report-summary");
-
-        summary.innerHTML = `
-            <p><strong>Reporting period:</strong> ${period === "all" ? "All time" : period}</p>
-            <p><strong>Activities recorded:</strong> ${filteredActivities.length}</p>
-            <p><strong>Goals created:</strong> ${goals.length}</p>
-            <p><strong>Goals completed:</strong> ${completedGoals.length}</p>
-            <p><strong>Average goal progress:</strong> ${PGT.formatPercentage(averageProgress)}</p>
+    function renderSummary(data, period) {
+        const summary = data.summary;
+        summaryContainer.innerHTML = `
+            <p><strong>Reporting period:</strong> ${PERIOD_LABELS[period]}</p>
+            <ul>
+                <li>Goals tracked: ${summary.total_goals}</li>
+                <li>Milestones completed: ${summary.completed_milestones} of ${summary.total_milestones}</li>
+                <li>Activity amount recorded: ${PGT.formatNumber(summary.activity_duration)} (mixed units across goals)</li>
+                <li>Reflections written: ${summary.total_reflections}</li>
+                <li>Achievements recorded: ${summary.total_achievements}</li>
+            </ul>
         `;
+    }
 
-
-        // Growth area breakdown.
-
-        const categories = [
-            "Education",
-            "Web Development",
-            "Personal Growth",
-            "Other"
-        ];
-
-        const breakdown = document.getElementById(
-            "report-growth-breakdown"
-        );
-
-        breakdown.innerHTML = categories.map(category => {
-
-            const categoryGoals = goals.filter(
-                goal => goal.category === category
-            );
-
-            const progress = categoryGoals.length
-                ? categoryGoals.reduce((total, goal) => {
-                    return total + PGT.calculateGoalProgress(goal);
-                }, 0) / categoryGoals.length
-                : 0;
+    function renderBreakdown(data) {
+        breakdownContainer.innerHTML = CATEGORIES.map(category => {
+            const goals = data.goals.filter(goal => goal.category === category);
+            const progress = Math.min(100, Math.max(0, PGT.averageProgress(goals)));
+            const activity = data.growth_by_category.find(item => item.category === category);
+            const amount = activity ? PGT.formatNumber(activity.activity_duration) : "0";
 
             return `
-                <article class="growth-card">
+                <article class="growth-area-card">
                     <h3>${category}</h3>
-                    <div class="progress-track">
-                        <div class="progress-fill" style="width:${progress}%"></div>
-                    </div>
-                    <p class="growth-percentage">${PGT.formatPercentage(progress)}</p>
-                    <p>${categoryGoals.length} goals</p>
+                    <p>${goals.length} goal${goals.length === 1 ? "" : "s"} &middot; ${PGT.formatPercentage(progress)} average progress</p>
+                    <p>${amount} recorded in this period</p>
                 </article>
             `;
         }).join("");
     }
 
+    async function generateReport() {
+        const { period, startDate, endDate } = currentRange();
+        generateButton.disabled = true;
+        try {
+            const data = await PGT.api.get(`/reports/?start_date=${startDate}&end_date=${endDate}`);
+            activitiesCount.textContent = data.summary.total_activities;
+            completedGoals.textContent = data.summary.completed_goals;
+            averageProgress.textContent = PGT.formatPercentage(data.summary.overall_progress);
+            renderSummary(data, period);
+            renderBreakdown(data);
+        } catch (error) {
+            PGT.showPageError(error.message);
+        } finally {
+            generateButton.disabled = false;
+        }
+    }
+
+    async function downloadPdf() {
+        const { startDate, endDate } = currentRange();
+        downloadButton.disabled = true;
+        try {
+            // The PDF needs the Authorization header, so it is fetched as a file and saved from a blob URL.
+            const blob = await PGT.api.get(`/reports/pdf?start_date=${startDate}&end_date=${endDate}`, { blob: true });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `personal-growth-report-${endDate}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+            PGT.showPageError(error.message);
+        } finally {
+            downloadButton.disabled = false;
+        }
+    }
 
     if (generateButton) {
         generateButton.addEventListener("click", generateReport);
     }
-
-    generateReport();
-
+    if (downloadButton) {
+        downloadButton.addEventListener("click", downloadPdf);
+    }
 });

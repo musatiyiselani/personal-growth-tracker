@@ -54,17 +54,19 @@ The intention is to make personal development measurable and easier to manage.
 
 ## Technology Stack
 
-The planned technologies include:
+The current build uses:
 
-- HTML
-- CSS
-- JavaScript
-- Python
-- FastAPI
-- PostgreSQL
-- Supabase
+- HTML, CSS and JavaScript (frontend, connected to the API)
+- Python with FastAPI (backend API)
+- SQLite (local database, created automatically)
+
+Planned for later:
+
+- PostgreSQL and Supabase (hosted database)
 - Git and GitHub
-- Render
+- Render (hosting)
+
+To run the project locally, see `backend/README_SETUP.md`.
 
 ## Long-Term Objective
 
