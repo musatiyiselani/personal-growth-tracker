@@ -1,11 +1,19 @@
-# Backend setup
+# Backend setup (local development)
 
-The backend is a FastAPI application that uses SQLite. The database file
-`personal_growth_tracker.db` is created automatically the first time the server starts.
+The backend is a FastAPI application. It stores data in **PostgreSQL** (Neon in production; any PostgreSQL database for local work). Tables are created automatically when the server starts.
 
-## 1. Create and activate a virtual environment
+For deploying to the internet, see `../DEPLOYMENT.md`.
 
-Run these commands from the `backend` folder (Windows PowerShell):
+## 1. Requirements
+
+- Python **3.12** (recommended; 3.11 and 3.13 should also work).
+- A PostgreSQL database. Two easy options:
+  - a **Neon** project or branch (the same service used in production), or
+  - a PostgreSQL server installed on your computer.
+
+## 2. Create a virtual environment and install the packages
+
+Run these commands from the `backend` folder (Windows PowerShell shown; use `source venv/bin/activate` on macOS/Linux):
 
 ```powershell
 python -m venv venv
@@ -13,48 +21,89 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-## 2. Create the secret key
+## 3. Create `backend/.env`
 
-The server will not start without a real `SECRET_KEY`. Generate one:
+Copy the example file:
 
 ```powershell
-python -c "import secrets; print(secrets.token_urlsafe(48))"
+copy .env.example .env
 ```
 
-Copy `.env.example` to `.env` in the `backend` folder, then replace the placeholder with the generated value:
+Edit `.env`:
 
+- `SECRET_KEY`: generate one with `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+- `DATABASE_URL`: your PostgreSQL connection string. For Neon, copy the **pooled** string from the Connect dialog (see `../DEPLOYMENT.md`, Step 1). For a local server it looks like `postgresql://postgres:YOUR_PASSWORD@localhost:5432/growth`.
+- `CORS_ORIGINS`: leave the default for local development.
+
+`.env` is excluded from Git. Do not share it.
+
+Settings can also come from real environment variables; those take priority over `.env`.
+
+## 4. Check the database connection and create the tables
+
+```powershell
+python init_db.py
 ```
-SECRET_KEY=paste-the-generated-value-here
-```
 
-`.env` is listed in `.gitignore`, so it will not be committed.
+You should see "Connected to the database." and "Tables are ready." If you see an error, the message names the problem (for example, `DATABASE_URL is not set`). It never prints the password.
 
-## 3. Start the API
+## 5. Start the API
 
 ```powershell
 uvicorn main:app --reload
 ```
 
-The API runs at http://127.0.0.1:8000. Interactive documentation is at http://127.0.0.1:8000/docs.
+- API: http://127.0.0.1:8000
+- Interactive documentation: http://127.0.0.1:8000/docs
+- Health checks: `/health` (server alive) and `/health/db` (database reachable)
 
-## 4. Start the frontend
+## 6. Start the frontend
 
-The frontend is plain HTML, CSS and JavaScript. It must be served over HTTP (not opened directly as a file) so the browser allows it to call the API. From the `frontend` folder:
+In a second terminal, from the `frontend` folder:
 
 ```powershell
 python -m http.server 5500
 ```
 
-Then open http://127.0.0.1:5500/index.html.
+Open http://127.0.0.1:5500/index.html. Keep `frontend/js/config.js` pointing at `http://127.0.0.1:8000` for local work.
 
-The API accepts requests from `http://127.0.0.1:5500` and `http://localhost:5500`. If you serve the frontend on another port, add that origin to `allow_origins` in `main.py`.
+The API accepts requests from `http://127.0.0.1:5500` and `http://localhost:5500` by default. To allow another address, add it to `CORS_ORIGINS` in `.env`, separated by commas.
 
-## Upgrading from an earlier version
+## 7. Run the automated tests
 
-This version adds a `unit` column to goals and activities. An existing `personal_growth_tracker.db` from an earlier version will not have that column. Delete the database file (this removes all data) and restart the server, or migrate the data with a tool of your choice.
+Install the test packages once:
+
+```powershell
+pip install -r requirements-dev.txt
+```
+
+**Tests that need no database** (configuration, picture rules, request validation):
+
+```powershell
+pytest tests/test_config.py tests/test_picture_rules.py tests/test_schemas.py
+```
+
+**Database and API tests.** These need a database that you have set aside for testing. They **delete all tables** in that database at the start of the run, so never point them at your real database. Create a separate Neon branch named `test` (see `../DEPLOYMENT.md`) and set `TEST_DATABASE_URL` to its pooled connection string:
+
+```powershell
+$env:TEST_DATABASE_URL = "postgresql://USER:PASSWORD@ep-test-pooler.region.aws.neon.tech/neondb?sslmode=require"
+pytest
+```
+
+Without `TEST_DATABASE_URL`, the database tests are skipped and reported as skipped. The tests never read `DATABASE_URL`.
+
+Frontend tests (run from the project root, need Node.js):
+
+```powershell
+node tests/common_test.js
+node tests/dashboard_test.js
+node tests/profile_test.js
+```
 
 ## Notes
 
-- Goal progress is calculated from activities in the last seven calendar days, grouped by category. An activity counts toward every goal in its category, so give goals that should be tracked separately different categories.
-- Activity amounts and goal targets are in the same unit (for example, hours or pages). Each goal stores its unit, and new activities take the unit of the goal they are recorded against.
-- Password reset by email is not implemented yet.
+- **Progress** for a goal is the share of the weekly target reached by activities in the same category during the last seven days, averaged with milestone completion when a goal has milestones. Activities in a category count toward every goal in that category.
+- **Activity units:** each goal stores its unit, and new activities take the unit of the goal they are recorded against.
+- **Profile pictures** are stored in the database (table `profile_pictures`), so they survive restarts. Each user keeps one picture; uploading a new one replaces the old one. Maximum size 5 MB; JPG, PNG and WEBP only.
+- **Schema changes:** tables are created when missing, but existing tables are not altered. If a later version changes an existing table, that change needs a migration. This version creates the new `profile_pictures` table automatically.
+- **Earlier SQLite data is not migrated.** The database file from earlier versions cannot be used with this version.

@@ -1,41 +1,35 @@
-from pathlib import Path
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
-from database import Base, engine
-
-# Import models before creating the tables.
-import models  # noqa: F401
-
+from config import get_cors_origins
+from database import check_database_connection, init_db
 from routers import users, goals, activities, reflections, achievements, reports, profile
 
-Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create any missing tables when the server starts. Existing data is not touched.
+    init_db()
+    yield
+
 
 app = FastAPI(
     title="Personal Growth Tracker API",
     description="Backend API for the Personal Growth Tracker.",
-    version="1.0.0"
+    version="1.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://127.0.0.1:3000",
-        "http://localhost:3000"
-    ],
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )
-
-UPLOADS_DIR = Path(__file__).resolve().parent / "uploads"
-UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-
-app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 app.include_router(users.router)
 app.include_router(goals.router)
@@ -56,4 +50,18 @@ def root():
 
 @app.get("/health")
 def health_check():
+    # Does not touch the database, so the service is reported as alive even if the database is asleep.
     return {"status": "healthy"}
+
+
+@app.get("/health/db")
+def database_health_check():
+    try:
+        check_database_connection()
+    except Exception:
+        # The error text is not returned: it can contain connection details.
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy", "database": "unreachable"},
+        )
+    return {"status": "healthy", "database": "connected"}

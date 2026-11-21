@@ -222,8 +222,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Local database and uploaded profile pictures
 personal_growth_tracker.db
 backend/personal_growth_tracker.db
-backend/uploads/profile_pictures/*
-!backend/uploads/profile_pictures/.gitkeep
+
+# Local SQLite files from earlier versions, and test caches
+*.db
+.pytest_cache/

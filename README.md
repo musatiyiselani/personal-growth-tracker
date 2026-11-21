@@ -56,17 +56,14 @@ The intention is to make personal development measurable and easier to manage.
 
 The current build uses:
 
-- HTML, CSS and JavaScript (frontend, connected to the API)
-- Python with FastAPI (backend API)
-- SQLite (local database, created automatically)
+- HTML, CSS and JavaScript (frontend, hosted on GitHub Pages)
+- Python with FastAPI (backend API, hosted on Render's free tier)
+- PostgreSQL on Neon's free tier (all data, including profile pictures)
 
-Planned for later:
+Source control and deployment: Git and GitHub.
 
-- PostgreSQL and Supabase (hosted database)
-- Git and GitHub
-- Render (hosting)
-
-To run the project locally, see `backend/README_SETUP.md`.
+To run the project on your computer, see `backend/README_SETUP.md`.
+To deploy it on free hosting, see `DEPLOYMENT.md`.
 
 ## Long-Term Objective
 

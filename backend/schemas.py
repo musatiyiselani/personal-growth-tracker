@@ -28,10 +28,22 @@ class UpdateModel(BaseModel):
 
 # Authentication and users
 
+def _email_fits_column(value):
+    # The email column is VARCHAR(255). PostgreSQL enforces that length, so check it here.
+    if value is not None and len(str(value)) > 255:
+        raise ValueError("Email address must be 255 characters or fewer.")
+    return value
+
+
 class UserCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def check_email_length(cls, value):
+        return _email_fits_column(value)
 
 
 class UserLogin(BaseModel):
@@ -54,6 +66,11 @@ class UserUpdate(UpdateModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     email: Optional[EmailStr] = None
     bio: Optional[str] = Field(default=None, max_length=2000)
+
+    @field_validator("email")
+    @classmethod
+    def check_email_length(cls, value):
+        return _email_fits_column(value)
 
 
 # Milestones (defined first because goal responses include them)

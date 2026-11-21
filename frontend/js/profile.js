@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const uploadButton = document.getElementById("upload-picture");
     const removeButton = document.getElementById("remove-picture");
 
+    let pictureObjectUrl = null;
+
     function renderAccountInfo(user) {
         accountInfo.innerHTML = `
             <p><strong>Email:</strong> ${PGT.escapeHTML(user.email)}</p>
@@ -16,23 +18,38 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
     }
 
-    function renderPicture(path) {
-        if (!path) {
-            preview.hidden = true;
-            preview.removeAttribute("src");
-            return;
-        }
-        // Cache-busting query so a replaced picture shows immediately.
-        preview.src = `${PGT.API_BASE}${path}?t=${Date.now()}`;
-        preview.hidden = false;
-    }
-
     function fillForm(user) {
         nameInput.value = user.name;
         emailInput.value = user.email;
         bioInput.value = user.bio || "";
         renderAccountInfo(user);
-        renderPicture(user.profile_picture);
+    }
+
+    function releasePictureUrl() {
+        if (pictureObjectUrl) {
+            URL.revokeObjectURL(pictureObjectUrl);
+            pictureObjectUrl = null;
+        }
+    }
+
+    // The picture is private, so it is fetched with the sign-in token and shown from a
+    // temporary local URL. A plain <img src="..."> cannot send the token.
+    async function renderPicture(hasPicture) {
+        releasePictureUrl();
+        if (!hasPicture) {
+            preview.hidden = true;
+            preview.removeAttribute("src");
+            return;
+        }
+        try {
+            const blob = await PGT.api.get("/profile/picture", { blob: true });
+            pictureObjectUrl = URL.createObjectURL(blob);
+            preview.src = pictureObjectUrl;
+            preview.hidden = false;
+        } catch (error) {
+            preview.hidden = true;
+            PGT.showMessage("picture-message", error.message, "error");
+        }
     }
 
     async function loadProfile() {
@@ -40,6 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const user = await PGT.api.get("/profile/");
             PGT.setCurrentUser(user);
             fillForm(user);
+            await renderPicture(Boolean(user.profile_picture));
         } catch (error) {
             PGT.showPageError(error.message);
         }
@@ -92,9 +110,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             uploadButton.disabled = true;
             try {
-                const data = await PGT.api.postForm("/profile/picture", formData);
-                renderPicture(data.profile_picture);
+                await PGT.api.postForm("/profile/picture", formData);
                 pictureInput.value = "";
+                await renderPicture(true);
                 PGT.showMessage("picture-message", "Profile picture uploaded.", "success");
             } catch (error) {
                 PGT.showMessage("picture-message", error.message, "error");
@@ -108,7 +126,7 @@ document.addEventListener("DOMContentLoaded", function () {
         removeButton.addEventListener("click", async function () {
             try {
                 await PGT.api.delete("/profile/picture");
-                renderPicture(null);
+                await renderPicture(false);
                 PGT.showMessage("picture-message", "Profile picture removed.", "success");
             } catch (error) {
                 PGT.showMessage("picture-message", error.message, "error");

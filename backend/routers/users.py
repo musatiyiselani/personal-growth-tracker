@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -22,10 +23,15 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         email=email,
         hashed_password=hash_password(user_data.password)
     )
-    db.add(user)
-    db.flush()
-    db.add(UserSettings(user_id=user.id))
-    db.commit()
+    try:
+        db.add(user)
+        db.flush()
+        db.add(UserSettings(user_id=user.id))
+        db.commit()
+    except IntegrityError:
+        # Two sign-ups with the same email at the same moment: the database keeps one.
+        db.rollback()
+        raise HTTPException(status_code=400, detail="An account with this email already exists.")
     db.refresh(user)
     return user
 
@@ -76,6 +82,10 @@ def update_me(
     for key, value in updates.items():
         setattr(current_user, key, value)
 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="That email is already in use.")
     db.refresh(current_user)
     return current_user

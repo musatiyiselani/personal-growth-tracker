@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from models import Goal, Activity, DailyProgress
 
@@ -51,23 +52,17 @@ def update_user_progress(db: Session, user_id: int):
     overall = sum(goal.progress or 0 for goal in goals) / len(goals) if goals else 0
     today = date.today()
 
-    snapshot = (
-        db.query(DailyProgress)
-        .filter(
-            DailyProgress.user_id == user_id,
-            DailyProgress.progress_date == today
-        )
-        .first()
+    # Save today's snapshot in one statement: insert it, or update today's row if it exists.
+    # A separate "check, then insert" could fail when two requests run at the same moment.
+    statement = pg_insert(DailyProgress).values(
+        user_id=user_id,
+        progress_date=today,
+        overall_progress=round(overall, 2),
     )
-
-    if snapshot:
-        snapshot.overall_progress = round(overall, 2)
-    else:
-        db.add(DailyProgress(
-            user_id=user_id,
-            progress_date=today,
-            overall_progress=round(overall, 2)
-        ))
-
+    statement = statement.on_conflict_do_update(
+        constraint="unique_user_progress_date",
+        set_={"overall_progress": statement.excluded.overall_progress},
+    )
+    db.execute(statement)
     db.commit()
     return round(overall, 2)
