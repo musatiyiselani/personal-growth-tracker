@@ -147,6 +147,7 @@ class GoalResponse(ORMModel):
     milestones: list[MilestoneResponse] = []
 
 
+
 # Activities
 
 class ActivityCreate(BaseModel):
@@ -156,6 +157,7 @@ class ActivityCreate(BaseModel):
     duration: Optional[float] = Field(default=None, gt=0, le=100000)
     unit: str = Field(default="hours", min_length=1, max_length=30)
     activity_date: date
+    goal_id: Optional[int] = None
 
 
 class ActivityUpdate(UpdateModel):
@@ -169,6 +171,7 @@ class ActivityUpdate(UpdateModel):
     duration: Optional[float] = Field(default=None, gt=0, le=100000)
     unit: Optional[str] = Field(default=None, min_length=1, max_length=30)
     activity_date: Optional[date] = None
+    goal_id: Optional[int] = None
 
 
 class ActivityResponse(ORMModel):
@@ -180,6 +183,7 @@ class ActivityResponse(ORMModel):
     duration: Optional[float] = None
     unit: str
     activity_date: date
+    goal_id: Optional[int] = None
     created_at: datetime
 
 

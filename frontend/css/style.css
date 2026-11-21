@@ -1273,3 +1273,71 @@ body.dark-mode .auth-heading h2 {
     border-radius: inherit;
     display: block;
 }
+
+
+/* Activity editing modal */
+
+.activity-modal {
+    width: min(90%, 550px);
+    max-height: 90vh;
+    overflow-y: auto;
+    border: none;
+    border-radius: 12px;
+    padding: 0;
+    margin: auto;
+    background: white;
+    color: #222;
+}
+
+.activity-modal::backdrop {
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.activity-modal-content {
+    padding: 25px;
+}
+
+.activity-modal-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.activity-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.activity-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.activity-modal-actions button {
+    cursor: pointer;
+}
+
+.activity-modal .form-message:empty {
+    display: none;
+}
+
+.dark-mode .activity-modal {
+    background: #1f2937;
+    color: white;
+}
+
+@media (max-width: 480px) {
+    .activity-modal-content {
+        padding: 18px;
+    }
+
+    .activity-modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .activity-modal-actions button {
+        width: 100%;
+    }
+}

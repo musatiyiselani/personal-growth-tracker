@@ -49,6 +49,7 @@ class Goal(Base):
 
     owner = relationship("User", back_populates="goals")
     milestones = relationship("Milestone", back_populates="goal", cascade="all, delete-orphan")
+    activities = relationship("Activity", back_populates="goal")
 
 
 class Milestone(Base):
@@ -69,6 +70,12 @@ class Activity(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    goal_id = Column(
+        Integer,
+        ForeignKey("goals.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     category = Column(String(100), nullable=False)
@@ -78,6 +85,7 @@ class Activity(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="activities")
+    goal = relationship("Goal", back_populates="activities")
 
 
 class Reflection(Base):

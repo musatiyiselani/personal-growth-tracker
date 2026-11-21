@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from models import Goal, Activity, DailyProgress
 
 
+
 def calculate_goal_progress(db: Session, goal: Goal) -> float:
     today = date.today()
     week_start = today - timedelta(days=6)
@@ -12,7 +13,7 @@ def calculate_goal_progress(db: Session, goal: Goal) -> float:
         db.query(Activity)
         .filter(
             Activity.user_id == goal.user_id,
-            Activity.category == goal.category,
+            Activity.goal_id == goal.id,
             Activity.activity_date >= week_start,
             Activity.activity_date <= today
         )
@@ -20,18 +21,30 @@ def calculate_goal_progress(db: Session, goal: Goal) -> float:
     )
 
     total_duration = sum(item.duration or 0 for item in activities)
+
     target = goal.weekly_target or 0
-    activity_progress = min((total_duration / target) * 100, 100) if target > 0 else 0
+
+    activity_progress = (
+        min((total_duration / target) * 100, 100)
+        if target > 0 else 0
+    )
 
     milestone_count = len(goal.milestones)
+
     if milestone_count:
-        completed = sum(1 for milestone in goal.milestones if milestone.completed)
+        completed = sum(
+            1 for milestone in goal.milestones
+            if milestone.completed
+        )
+
         milestone_progress = completed / milestone_count * 100
+
         result = (activity_progress + milestone_progress) / 2
     else:
         result = activity_progress
 
     return round(max(0, min(result, 100)), 2)
+
 
 
 def update_goal_progress(db: Session, goal: Goal):

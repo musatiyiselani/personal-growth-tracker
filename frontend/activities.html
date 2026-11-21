@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
     <title>Activities | Personal Growth Tracker</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -13,9 +13,12 @@
 
     <aside class="sidebar">
         <div class="sidebar-brand">
-            <div class="brand-logo"><img src="assets/logo.png" alt="Personal Growth Tracker logo"></div>
+            <div class="brand-logo">
+                <img src="assets/logo.png" alt="Personal Growth Tracker logo">
+            </div>
             <h2>Growth Tracker</h2>
         </div>
+
         <nav class="sidebar-nav">
             <a href="dashboard.html">Dashboard</a>
             <a href="goals.html">My Goals</a>
@@ -25,6 +28,7 @@
             <a href="achievements.html">Achievements</a>
             <a href="reports.html">Reports</a>
         </nav>
+
         <div class="sidebar-bottom">
             <a href="profile.html">My Profile</a>
             <a href="settings.html">Settings</a>
@@ -33,6 +37,7 @@
     </aside>
 
     <main class="main-content">
+
         <header class="page-header">
             <div>
                 <h1>Activity Tracking</h1>
@@ -40,25 +45,39 @@
             </div>
         </header>
 
+        <!-- Log Activity -->
         <section class="content-section">
             <h2>Log an Activity</h2>
 
             <form id="activity-form" class="app-form">
+
                 <div class="form-group">
-                    <label for="activity-goal">Related goal</label>
-                    <select id="activity-goal" required>
-                        <option value="">Select a goal</option>
+                    <label for="activity-goal">Related goal (optional)</label>
+                    <select id="activity-goal">
+                        <option value="">No related goal</option>
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="activity-title">Activity</label>
-                    <input type="text" id="activity-title" required placeholder="What did you work on?">
+                    <input
+                        type="text"
+                        id="activity-title"
+                        required
+                        placeholder="What did you work on?"
+                    >
                 </div>
 
                 <div class="form-group">
                     <label for="activity-amount">Amount completed</label>
-                    <input type="number" id="activity-amount" min="0.01" step="any" required placeholder="e.g. 2">
+                    <input
+                        type="number"
+                        id="activity-amount"
+                        min="0.01"
+                        step="any"
+                        required
+                        placeholder="e.g. 20"
+                    >
                 </div>
 
                 <div class="form-group">
@@ -68,23 +87,110 @@
 
                 <div class="form-group">
                     <label for="activity-notes">Notes</label>
-                    <textarea id="activity-notes" placeholder="Additional details (optional)"></textarea>
+                    <textarea
+                        id="activity-notes"
+                        placeholder="Additional details (optional)"
+                    ></textarea>
                 </div>
 
-                <button type="submit" class="primary-button">Save Activity</button>
+                <button type="submit" class="primary-button">
+                    Save Activity
+                </button>
+
                 <p id="activity-message" class="form-message"></p>
             </form>
         </section>
 
+        <!-- Activity History -->
         <section class="content-section">
             <h2>Activity History</h2>
+
             <div id="activities-container" class="content-list"></div>
-            <p id="no-activities">No activities have been recorded yet.</p>
+
+            <p id="no-activities">
+                No activities have been recorded yet.
+            </p>
         </section>
+
     </main>
+
+    <!-- Edit Activity Modal -->
+    <dialog id="edit-activity-modal" class="activity-modal">
+
+        <div class="activity-modal-content">
+
+            <h2>Edit Activity</h2>
+
+            <form id="edit-activity-form" class="app-form">
+
+                <div class="form-group">
+                    <label for="edit-activity-goal">Related goal</label>
+                    <select id="edit-activity-goal">
+                        <option value="">No related goal</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-title">Activity</label>
+                    <input
+                        type="text"
+                        id="edit-activity-title"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-amount">Amount completed</label>
+                    <input
+                        type="number"
+                        id="edit-activity-amount"
+                        min="0.01"
+                        step="any"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-date">Date</label>
+                    <input
+                        type="date"
+                        id="edit-activity-date"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-activity-notes">Notes</label>
+                    <textarea id="edit-activity-notes"></textarea>
+                </div>
+
+                <p id="edit-activity-message" class="form-message"></p>
+
+                <div class="activity-modal-actions">
+
+                    <button
+                        type="button"
+                        id="cancel-edit-activity"
+                        class="secondary-button"
+                    >
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="primary-button">
+                        Save Changes
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </dialog>
 
     <script src="js/config.js"></script>
     <script src="js/common.js"></script>
     <script src="js/activities.js"></script>
+
 </body>
 </html>

@@ -3,18 +3,32 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import Activity
+from models import Activity, Goal
 from schemas import ActivityCreate, ActivityUpdate, ActivityResponse
 from auth import get_current_user
 from progress import update_user_progress
 
 router = APIRouter(prefix="/activities", tags=["Activities"])
+def validate_goal_ownership(goal_id: int | None, db: Session, user_id: int):
+    if goal_id is None:
+        return
 
+    goal = db.query(Goal).filter(
+        Goal.id == goal_id,
+        Goal.user_id == user_id
+    ).first()
+
+    if not goal:
+        raise HTTPException(
+            status_code=404,
+            detail="Goal not found."
+        )
 
 @router.post("/", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
 def create_activity(data: ActivityCreate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     if data.activity_date > date.today():
         raise HTTPException(status_code=400, detail="Activities cannot be dated in the future.")
+    validate_goal_ownership(data.goal_id, db, current_user.id)
     activity = Activity(**data.model_dump(), user_id=current_user.id)
     db.add(activity)
     db.commit()
@@ -43,6 +57,8 @@ def edit_activity(activity_id: int, data: ActivityUpdate, db: Session = Depends(
         raise HTTPException(status_code=404, detail="Activity not found.")
 
     updates = data.model_dump(exclude_unset=True)
+    if "goal_id" in updates:
+        validate_goal_ownership(updates["goal_id"], db, current_user.id)
     new_date = updates.get("activity_date", activity.activity_date)
     if new_date and new_date > date.today():
         raise HTTPException(status_code=400, detail="Activities cannot be dated in the future.")
