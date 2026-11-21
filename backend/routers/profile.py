@@ -10,7 +10,7 @@ from database import get_db
 from models import ProfilePicture, User, UserSettings
 from schemas import UserUpdate, UserResponse, SettingsUpdate, SettingsResponse
 from auth import get_current_user
-from backend.picture_rules import MAX_PICTURE_BYTES, content_type_for_extension, matches_image_signature
+from picture_rules import MAX_PICTURE_BYTES, content_type_for_extension, matches_image_signature
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
