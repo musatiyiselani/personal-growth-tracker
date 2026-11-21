@@ -7,4 +7,11 @@
  *     https://personal-growth-tracker-api.onrender.com
  *     (no trailing slash). See DEPLOYMENT.md, step 4.
  */
-window.PGT_API_BASE = "http://127.0.0.1:8000";
+
+
+/*
+ * Personal Growth Tracker API configuration
+ */
+
+window.PGT_API_BASE = "https://personal-growth-tracker-api-r402.onrender.com";
+
